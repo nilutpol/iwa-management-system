@@ -1,16 +1,11 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { withStyles } from '@material-ui/core/styles';
-import { Grid, Typography, Card, CardContent, Button, FormControl, FormGroup, FormLabel, Tabs, Tab, LinearProgress, Dialog, DialogTitle, DialogContent, MenuItem } from '@material-ui/core'
-import MaterialTable from 'material-table';
-import { Formik, Form, Field } from 'formik';
-import { TextField } from 'formik-material-ui';
-import { CheckboxWithLabel } from 'formik-material-ui';
+import { Grid } from '@material-ui/core'
 
 import Axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import Swal from 'sweetalert2'
 import store from 'store';
 import { withRouter } from 'react-router-dom';
 import Constants from '../Constants';

@@ -1,10 +1,11 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { withStyles } from '@material-ui/core/styles';
-import { Grid, Typography, Card, CardHeader, CardContent, CardMedia, Button, LinearProgress, Dialog, DialogTitle, DialogContent, MenuItem, Fab, CircularProgress, ListItem, ListItemText, ListItemAvatar, Avatar, InputAdornment, IconButton, TextField } from '@material-ui/core'
+import { Grid, Box, Typography, Card, CardHeader, CardContent, CardMedia, Button, LinearProgress, Dialog, DialogTitle, DialogContent, MenuItem, Fab, CircularProgress, Tabs, Tab, ListItemAvatar, Avatar, InputAdornment, IconButton, TextField } from '@material-ui/core'
 import AddIcon from '@material-ui/icons/Add';
 import ImageIcon from '@material-ui/icons/Image';
 import SearchIcon from '@material-ui/icons/Search';
+import MoreVertIcon from '@material-ui/icons/MoreVert';
 
 import { Formik, Form, Field } from 'formik';
 import { TextField as FormikTextField } from 'formik-material-ui';
@@ -60,10 +61,45 @@ const styles = theme => ({
 
 registerPlugin(FilePondPluginFileValidateSize, FilePondPluginFileValidateType, FilePondPluginFileEncode, FilePondPluginImagePreview);
 
+function TabPanel(props) {
+    const { children, value, index, ...other } = props;
+
+    return (
+        <div
+            role="tabpanel"
+            hidden={value !== index}
+            id={`scrollable-auto-tabpanel-${index}`}
+            aria-labelledby={`scrollable-auto-tab-${index}`}
+            {...other}
+        >
+            {value === index && (
+                <Box p={3}>
+                    <Typography>{children}</Typography>
+                </Box>
+            )}
+        </div>
+    )
+}
+
+TabPanel.propTypes = {
+    children: PropTypes.node,
+    index: PropTypes.any.isRequired,
+    value: PropTypes.any.isRequired,
+};
+
+function a11yProps(index) {
+    return {
+        id: `simple-tab-${index}`,
+        'aria-controls': `simple-tabpanel-${index}`,
+    };
+}
+
 class Design extends Component {
     state = {
+        tab_value: 0,
         is_fetching_data: true,
         yarn_list: [],
+        design_type_list: [],
         data: [],
         metaData: null,
         selectedRow: null,
@@ -97,12 +133,14 @@ class Design extends Component {
     getYarnList() {
         this.setState({ is_fetching_data: true }, () => {
             let get_yarn_list = Axios.get(Constants.API_BASE_URL + 'get_yarn_list');
-            Axios.all([get_yarn_list])
+            let get_design_type_list = Axios.get(Constants.API_BASE_URL + 'get_design_type_list');
+            Axios.all([get_yarn_list, get_design_type_list])
                 .then(res => {
                     if (res[0].data.success) {
                         this.setState({
                             is_fetching_data: false,
                             yarn_list: res[0].data.data,
+                            design_type_list: res[1].data.data,
                         })
                     } else {
                         this.setState({ is_fetching_data: false })
@@ -146,25 +184,172 @@ class Design extends Component {
         this.setState({ openNewDesign: false })
     }
 
-    getImageData = () => {
+    getImageDataDesign = () => {
         return new Promise((resolve, reject) => {
-            if (!this.pond_rc) {
+            if (!this.pond_rc_design) {
                 resolve(null);
             }
-            let files = this.pond_rc.getFiles();
+            let files = this.pond_rc_design.getFiles();
             if (files.length === 0) {
                 resolve(null);
             }
-            files[0].setMetadata({
-                design_no: 1
-            });
-
             resolve(files[0])
         });
     }
 
+    getImageDataCard = () => {
+        return new Promise((resolve, reject) => {
+            if (!this.pond_rc_card) {
+                resolve(null);
+            }
+            let files = this.pond_rc_card.getFiles();
+            if (files.length === 0) {
+                resolve(null);
+            }
+            resolve(files[0])
+        });
+    }
+
+    getButaComponent = (classes, data, metaData) => {
+        return (
+            <Grid item container>
+                <InfiniteScroll
+                    style={{ width: '95vw' }}
+                    dataLength={data.length}
+                    next={this.getDesignData}
+                    hasMore={metaData.hasNextPage}
+                    loader={<h4>Loading...</h4>}
+                >
+                    {data.map((i, index) => {
+                        return (
+                            <Grid key={index} item xs={12} md={5}>
+                                <Card className={classes.card}>
+                                    <CardHeader
+                                        title={i.design_no}
+                                        subheader={DateTime.fromISO(i.created_at).toFormat('dd-LL-yyyy')}
+                                        action={
+                                            <IconButton aria-label="settings">
+                                                <MoreVertIcon />
+                                            </IconButton>
+                                        }
+                                    />
+                                    <CardMedia
+                                        className={classes.media}
+                                        component='img'
+                                        src={i.image_data_design}
+                                        title="Design Image File"
+                                    />
+                                    <CardMedia
+                                        className={classes.media}
+                                        component='img'
+                                        src={i.image_data_card}
+                                        title="Card Image File"
+                                    />
+                                    {/* <CardContent >
+                                                <Typography variant="body2" color="textSecondary" component="p">{i.warp + '(' + i.warp_color + ')' + ' / ' + i.weft + '(' + i.weft_color + ')'}</Typography>
+                                            </CardContent> */}
+                                </Card>
+                            </Grid>)
+                    })}
+                </InfiniteScroll>
+            </Grid>
+        )
+    }
+
+    getPariComponent = (classes, data, metaData) => {
+        return (
+            <Grid item container>
+                <InfiniteScroll
+                    style={{ width: '95vw' }}
+                    dataLength={data.length}
+                    next={this.getDesignData}
+                    hasMore={metaData.hasNextPage}
+                    loader={<h4>Loading...</h4>}
+                >
+                    {data.map((i, index) => {
+                        return (
+                            <Grid key={index} item xs={12} md={5}>
+                                <Card className={classes.card}>
+                                    <CardHeader
+                                        title={i.design_no}
+                                        subheader={DateTime.fromISO(i.created_at).toFormat('dd-LL-yyyy')}
+                                        action={
+                                            <IconButton aria-label="settings">
+                                                <MoreVertIcon />
+                                            </IconButton>
+                                        }
+                                    />
+                                    <CardMedia
+                                        className={classes.media}
+                                        component='img'
+                                        src={i.image_data_design}
+                                        title="Design Image File"
+                                    />
+                                    <CardMedia
+                                        className={classes.media}
+                                        component='img'
+                                        src={i.image_data_card}
+                                        title="Card Image File"
+                                    />
+                                    {/* <CardContent >
+                                                <Typography variant="body2" color="textSecondary" component="p">{i.warp + '(' + i.warp_color + ')' + ' / ' + i.weft + '(' + i.weft_color + ')'}</Typography>
+                                            </CardContent> */}
+                                </Card>
+                            </Grid>)
+                    })}
+                </InfiniteScroll>
+            </Grid>
+        )
+    }
+
+    getGarmentComponent = (classes, data, metaData) => {
+        return (
+            <Grid item container>
+                <InfiniteScroll
+                    style={{ width: '95vw' }}
+                    dataLength={data.length}
+                    next={this.getDesignData}
+                    hasMore={metaData.hasNextPage}
+                    loader={<h4>Loading...</h4>}
+                >
+                    {data.map((i, index) => {
+                        return (
+                            <Grid key={index} item xs={12} md={5}>
+                                <Card className={classes.card}>
+                                    <CardHeader
+                                        title={i.design_no}
+                                        subheader={DateTime.fromISO(i.created_at).toFormat('dd-LL-yyyy')}
+                                        action={
+                                            <IconButton aria-label="settings">
+                                                <MoreVertIcon />
+                                            </IconButton>
+                                        }
+                                    />
+                                    <CardMedia
+                                        className={classes.media}
+                                        component='img'
+                                        src={i.image_data_design}
+                                        title="Design Image File"
+                                    />
+                                    <CardMedia
+                                        className={classes.media}
+                                        component='img'
+                                        src={i.image_data_card}
+                                        title="Card Image File"
+                                    />
+                                    {/* <CardContent >
+                                                <Typography variant="body2" color="textSecondary" component="p">{i.warp + '(' + i.warp_color + ')' + ' / ' + i.weft + '(' + i.weft_color + ')'}</Typography>
+                                            </CardContent> */}
+                                </Card>
+                            </Grid>)
+                    })}
+                </InfiniteScroll>
+            </Grid>
+        )
+    }
+
     render() {
-        const { is_fetching_data, data, metaData, yarn_list, openNewDesign } = this.state;
+        const { tab_value, is_fetching_data, data, metaData, yarn_list, design_type_list, openNewDesign } = this.state;
         const { classes } = this.props;
 
         if (!metaData) return <CircularProgress />;
@@ -172,7 +357,21 @@ class Design extends Component {
         return (
             <React.Fragment>
                 <Grid container spacing={1} justify="center" alignItems="center" style={{ backgroundColor: '#f7f9fc', padding: 10, marginBottom: 112 }}>
-                    <Typography variant='h4' gutterBottom>Design</Typography>
+                    <Tabs value={tab_value} onChange={(e, val) => this.setState({ tab_value: val })} aria-label="simple tabs example">
+                        <Tab label='Buta' {...a11yProps(0)} />
+                        <Tab label='Pari' {...a11yProps(1)} />
+                        <Tab label='Garment' {...a11yProps(2)} />
+                    </Tabs>
+                    <TabPanel value={tab_value} index={0}>
+                        {this.getButaComponent(classes, data, metaData)}
+                    </TabPanel>
+                    <TabPanel value={tab_value} index={1}>
+                    {this.getPariComponent(classes, data, metaData)}
+      </TabPanel>
+                    <TabPanel value={tab_value} index={2}>
+                    {this.getGarmentComponent(classes, data, metaData)}
+                    </TabPanel>
+                    {/* <Typography variant='h4' gutterBottom>Design</Typography> */}
                     {/* <Grid item xs={12}>
                         <TextField
                             label="Search"
@@ -188,36 +387,6 @@ class Design extends Component {
                             }}
                         />
                     </Grid> */}
-                    <Grid item container>
-                        <InfiniteScroll
-                            style={{ width: '95vw' }}
-                            dataLength={data.length}
-                            next={this.getDesignData}
-                            hasMore={metaData.hasNextPage}
-                            loader={<h4>Loading...</h4>}
-                        >
-                            {data.map((i, index) => {
-                                return (
-                                    <Grid key={index} item xs={12} md={5}>
-                                        <Card className={classes.card}>
-                                            <CardHeader
-                                                title={i.design_no}
-                                                subheader={DateTime.fromISO(i.created_at).toFormat('dd-LL-yyyy')}
-                                            />
-                                            <CardMedia
-                                                className={classes.media}
-                                                component='img'
-                                                src={i.image_data}
-                                                title="Paella dish"
-                                            />
-                                            {/* <CardContent >
-                                                <Typography variant="body2" color="textSecondary" component="p">{i.warp + '(' + i.warp_color + ')' + ' / ' + i.weft + '(' + i.weft_color + ')'}</Typography>
-                                            </CardContent> */}
-                                        </Card>
-                                    </Grid>)
-                            })}
-                        </InfiniteScroll>
-                    </Grid>
                     <Grid item >
                         <Fab color="primary" className={classes.fab} onClick={() => this.setState({ openNewDesign: true })}>
                             <AddIcon />
@@ -238,17 +407,20 @@ class Design extends Component {
                                 if (!values.design_no) {
                                     errors.design_no = 'Required';
                                 }
+                                if (!values.design_type) {
+                                    errors.design_type = 'Required';
+                                }
                                 if (!values.warp) {
                                     errors.warp = 'Required';
                                 }
                                 if (!values.warp_color) {
-                                    errors.color = 'Required';
+                                    errors.warp_color = 'Required';
                                 }
                                 if (!values.weft) {
                                     errors.weft = 'Required';
                                 }
                                 if (!values.weft_color) {
-                                    errors.color = 'Required';
+                                    errors.weft_color = 'Required';
                                 }
                                 if (!values.length) {
                                     errors.length = 'Required';
@@ -263,62 +435,77 @@ class Design extends Component {
                                     errors.width = 'Please enter valid Width in meters.';
                                 }
 
-                                if (!this.pond_rc) {
-                                    toast.error('Please select design image.');
-                                    errors.image = 'Please select design image.';
+                                if (!this.pond_rc_design) {
+                                    toast.error('Please select Design image.');
+                                    errors.image = 'Please select Design image.';
                                 }
-                                if (this.pond_rc.getFiles().length === 0) {
-                                    toast.error('Please select design image.');
-                                    errors.image = 'Please select design image.';
+                                if (this.pond_rc_design.getFiles().length === 0) {
+                                    toast.error('Please select Design image.');
+                                    errors.image = 'Please select Design image.';
+                                }
+
+                                if (!this.pond_rc_card) {
+                                    toast.error('Please select Card image.');
+                                    errors.image = 'Please select Card image.';
+                                }
+                                if (this.pond_rc_card.getFiles().length === 0) {
+                                    toast.error('Please select Card image.');
+                                    errors.image = 'Please select Card image.';
                                 }
 
                                 return errors;
                             }}
-                            onSubmit={(values, { setSubmitting }) => {
+                            onSubmit={async (values, { setSubmitting }) => {
                                 // Send to Backend
                                 let post_data = values;
 
-                                this.getImageData()
-                                    .then((image_data) => {
-                                        post_data.image_data = image_data.getFileEncodeDataURL();
+                                const image_data_design = await this.getImageDataDesign();
+                                const image_data_card = await this.getImageDataDesign();
 
-                                        Axios.post(Constants.API_BASE_URL + 'add_design', post_data)
-                                            .then((res) => {
-                                                setSubmitting(false);
-                                                this.handleCloseNewDesign();
-                                                if (res.data.success) {
-                                                    Swal.fire(
-                                                        'Success',
-                                                        'Design added successfully.',
-                                                        'success'
-                                                    )
-                                                } else {
-                                                    Swal.fire(
-                                                        'Failed!',
-                                                        res.data.data,
-                                                        'error'
-                                                    )
-                                                }
-                                                // Reset the design data
-                                                this.setState({ data: [] }, () => this.getDesignData())
-                                            })
-                                            .catch(err => {
-                                                setSubmitting(false);
-                                                Swal.fire(
-                                                    'Failed!',
-                                                    err,
-                                                    'error'
-                                                )
-                                                this.getDesignData();
-                                            });
+                                post_data.image_data_design = image_data_design.getFileEncodeDataURL();
+                                post_data.image_data_card = image_data_card.getFileEncodeDataURL();
+
+                                Axios.post(Constants.API_BASE_URL + 'add_design', post_data)
+                                    .then((res) => {
+                                        setSubmitting(false);
+                                        this.handleCloseNewDesign();
+                                        if (res.data.success) {
+                                            Swal.fire(
+                                                'Success',
+                                                'Design added successfully.',
+                                                'success'
+                                            )
+                                        } else {
+                                            Swal.fire(
+                                                'Failed!',
+                                                res.data.data,
+                                                'error'
+                                            )
+                                        }
+                                        // Reset the design data
+                                        this.setState({ data: [] }, () => this.getDesignData())
+                                    })
+                                    .catch(err => {
+                                        setSubmitting(false);
+                                        Swal.fire(
+                                            'Failed!',
+                                            err,
+                                            'error'
+                                        )
+                                        this.getDesignData();
                                     });
                             }}
                         >
                             {({ handleSubmit, values, errors, isSubmitting }) => {
                                 return (<Form >
                                     <Grid container spacing={1}>
-                                        <Grid item xs={12} md={12}>
-                                            <Field name="design_no" label="Design No." margin="normal" component={FormikTextField} fullWidth variant='outlined' error={errors.design_no !== undefined} helperText={errors.design_no} />
+                                        <Grid item xs={6} md={6}>
+                                            <Field name="design_no" label="Design No." component={FormikTextField} fullWidth variant='outlined' error={errors.design_no !== undefined} helperText={errors.design_no} />
+                                        </Grid>
+                                        <Grid item xs={6} md={6}>
+                                            <Field type="text" name="design_type" label="Design Type" select component={FormikTextField} fullWidth variant='outlined' error={errors.design_type !== undefined} helperText={errors.design_type}>
+                                                {_.map(design_type_list, item => <MenuItem key={item} value={item}>{item}</MenuItem>)}
+                                            </Field>
                                         </Grid>
                                         <Grid item xs={6} md={3}>
                                             <Field type="text" name="warp" label="Warp" select component={FormikTextField} fullWidth variant='outlined' error={errors.warp !== undefined} helperText={errors.warp}>
@@ -360,8 +547,23 @@ class Design extends Component {
                                         </Grid>
                                         <Grid item xs={12} md={6}>
                                             <FilePond
-                                                ref={ref => this.pond_rc = ref}
+                                                ref={ref => this.pond_rc_design = ref}
                                                 labelIdle='Browse or Drop Design image file'
+                                                instantUpload={false}
+                                                allowRevert={false}
+                                                labelTapToRetry='Click Upload to Retry'
+                                                labelTapToCancel='Click to Cancel'
+                                                allowFileSizeValidation={true}
+                                                maxFileSize={10e6}
+                                                allowFileTypeValidation={true}
+                                                acceptedFileTypes={['image/*']}
+                                                credits={false}
+                                            />
+                                        </Grid>
+                                        <Grid item xs={12} md={6}>
+                                            <FilePond
+                                                ref={ref => this.pond_rc_card = ref}
+                                                labelIdle='Browse or Drop Card image file'
                                                 instantUpload={false}
                                                 allowRevert={false}
                                                 labelTapToRetry='Click Upload to Retry'

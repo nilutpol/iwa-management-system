@@ -317,6 +317,19 @@ router.get('/get_yarn_list', passport.authenticate('jwt', { session: false }), (
 	});
 });
 
+router.get('/get_design_type_list', passport.authenticate('jwt', { session: false }), (req, res) => {
+	return res.json({
+		success: true,
+		data: [
+			'Mekhela',
+			'Sari',
+			'Stole',
+			'Gamusa',
+			'Fabric'
+		]
+	});
+});
+
 router.get('/get_designs', passport.authenticate('jwt', { session: false }), (req, res) => {
 	const options = {
 		page: req.query.page || 1,

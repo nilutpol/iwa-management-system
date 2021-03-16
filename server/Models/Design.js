@@ -3,6 +3,7 @@ const mongoosePaginate = require('mongoose-paginate-v2');
 
 let DesignSchema = new mongoose.Schema({
 	design_no: String,
+	design_type: String,
 	type: String,
 	warp: String,
 	warp_color: String,
@@ -14,7 +15,8 @@ let DesignSchema = new mongoose.Schema({
 	width: Number,
 	other_colors: String,
 	remarks: String,
-	image_data: String,
+	image_data_design: String,
+	image_data_card: String,
 	created_at: {
 		type: Date,
 		default: Date.now
